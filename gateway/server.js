@@ -1,8 +1,11 @@
 import 'dotenv/config';
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import {rateLimiter} from './middleware/rateLimiter.js';
 
 const app = express();
+
+app.use(rateLimiter);
 
 const PORT = process.env.PORT || 4000;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
