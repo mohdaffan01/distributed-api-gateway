@@ -1,14 +1,18 @@
 import 'dotenv/config';
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import {rateLimiter} from './middleware/rateLimiter.js';
+
+import { rateLimiter } from './middleware/rateLimiter.js';
+import { cache } from './middleware/cache.js';
+import redisClient from './config/redis.js';
 
 const app = express();
 
-app.use(rateLimiter);
-
 const PORT = process.env.PORT || 4000;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+
+// Rate Limiter
+app.use(rateLimiter);
 
 // Gateway health
 app.get('/health', (req, res) => {
@@ -16,6 +20,9 @@ app.get('/health', (req, res) => {
     gateway: 'OK'
   });
 });
+
+// Cache users endpoint
+app.get('/api/users', cache);
 
 // API proxy
 app.use(
@@ -30,11 +37,36 @@ app.use(
 
     on: {
       proxyReq: (proxyReq, req) => {
+        proxyReq.removeHeader("if-none-match");
+        proxyReq.removeHeader("if-modified-since");
+
         console.log(`Proxying: ${req.method} ${req.originalUrl}`);
       },
 
-      proxyRes: (proxyRes) => {
+      proxyRes: (proxyRes, req) => {
         console.log(`Backend response: ${proxyRes.statusCode}`);
+
+        if (req.cacheKey && proxyRes.statusCode === 200) {
+          let body = "";
+
+          proxyRes.on("data", (chunk) => {
+            body += chunk.toString();
+          });
+
+          proxyRes.on("end", async () => {
+            try {
+              await redisClient.setEx(
+                req.cacheKey,
+                30,
+                body
+              );
+
+              console.log("Cached:", req.cacheKey);
+            } catch (error) {
+              console.error("Cache save error:", error);
+            }
+          });
+        }
       },
 
       error: (err) => {
