@@ -17,6 +17,16 @@ const BACKENDS = [
   'http://localhost:3002', // index [1]
   'http://localhost:3003'  // index [2]
 ];
+let currentBackend = 0; // Index of the current backend to use
+
+const getNextBackend = () => { //Round Robin function 
+  const backend = BACKENDS[currentBackend];
+
+  console.log("Selected backend:", backend);
+
+  currentBackend = (currentBackend + 1) % BACKENDS.length;
+  return backend;
+}
 
 // Rate Limiter
 app.use(rateLimiter);
@@ -36,7 +46,10 @@ app.use(
   '/api',
   createProxyMiddleware({
     // target: BACKEND_URL,
-    target: BACKENDS[0],
+    target: BACKENDS[0], //this not mean that all request use the first backend
+    router : ()=> { // router use round robin for selecting  the backend
+      return getNextBackend();
+    },
     changeOrigin: true,
 
     pathRewrite: (path) => {
