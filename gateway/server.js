@@ -69,10 +69,11 @@ app.use(
   createProxyMiddleware({
     // target: BACKEND_URL,
     target: BACKENDS[0], //this not mean that all request use the first backend
-    router : ()=> { // router use round robin for selecting  the backend
+    router: () => { // router use round robin for selecting  the backend
       return getNextBackend();
     },
     changeOrigin: true,
+    proxyTimeout: 5000, // if backend not respond to 5 sec sec then send a error message
 
     pathRewrite: (path) => {
       return `/api${path}`;
@@ -112,8 +113,19 @@ app.use(
         }
       },
 
-      error: (err) => {
-        console.error('Proxy error:', err.message);
+      error: (err, req, res) => {
+        if (err.code === "ECONNRESET") {
+          console.log("Backend request timed out");
+
+          res.status(504).json({
+            error: "Gateway Timeout",
+            message: "Backend took too long to respond"
+          });
+
+          return;
+        }
+
+        console.error("Proxy error:", err.message);
       }
     }
   })

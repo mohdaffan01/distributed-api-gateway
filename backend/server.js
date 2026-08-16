@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
-    message : 'if you want to check health of server the use /health ',
+    message: 'if you want to check health of server the use /health ',
     status: 'healthy',
     service: 'api-server'
   });
@@ -27,7 +27,12 @@ app.get("/health", (req, res) => {
 });
 
 // Server info endpoint
-app.get("/api/server-info", (req, res) => {
+app.get("/api/server-info", async (req, res) => {
+  console.log("Backend 3001: request received");
+  await new Promise(resolve => setTimeout(resolve, 10000));
+
+  console.log("Backend 3001: sending response");
+
   res.json({
     server: SERVER_ID,
     port: PORT
