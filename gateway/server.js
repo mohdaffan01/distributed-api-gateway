@@ -8,25 +8,47 @@ import redisClient from './config/redis.js';
 
 const app = express();
 
-// const PORT = process.env.PORT || 4000;
-// const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
-
 const PORT = process.env.PORT || 4000;
 const BACKENDS = [
   'http://localhost:3001', // index [0]
   'http://localhost:3002', // index [1]
   'http://localhost:3003'  // index [2]
 ];
+
+const healthyBackends = new Set();
+
+const checkBackendHealth = async (backend) => {
+  try {
+    const response = await fetch(`${backend}/health`);
+
+    if (response.ok) {
+      healthyBackends.add(backend);
+      console.log(`Healthy: ${backend}`);
+    } else {
+      healthyBackends.delete(backend);
+      console.log(`Unhealthy: ${backend}`);
+    }
+  } catch (error) {
+    healthyBackends.delete(backend);
+    console.log(`Unhealthy: ${backend}`);
+  }
+};
+BACKENDS.forEach(checkBackendHealth);
+
 let currentBackend = 0; // Index of the current backend to use
 
-const getNextBackend = () => { //Round Robin function 
-  const backend = BACKENDS[currentBackend];
-
+const getNextBackend = () => { // round robin function
+  const availableBackends = BACKENDS.filter((backend) =>
+    healthyBackends.has(backend)
+  );
+  if (availableBackends.length === 0) {
+    throw new Error("No healthy backends available");
+  }
+  const backend = availableBackends[currentBackend % availableBackends.length];
   console.log("Selected backend:", backend);
-
-  currentBackend = (currentBackend + 1) % BACKENDS.length;
+  currentBackend = (currentBackend + 1) % availableBackends.length;
   return backend;
-}
+};
 
 // Rate Limiter
 app.use(rateLimiter);

@@ -13,10 +13,19 @@ app.get('/', (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
+    message : 'if you want to check health of server the use /health ',
     status: 'healthy',
     service: 'api-server'
   });
 });
+
+//health check 
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy"
+  });
+});
+
 // Server info endpoint
 app.get("/api/server-info", (req, res) => {
   res.json({
