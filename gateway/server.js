@@ -8,8 +8,15 @@ import redisClient from './config/redis.js';
 
 const app = express();
 
+// const PORT = process.env.PORT || 4000;
+// const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+
 const PORT = process.env.PORT || 4000;
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+const BACKENDS = [
+  'http://localhost:3001', // index [0]
+  'http://localhost:3002', // index [1]
+  'http://localhost:3003'  // index [2]
+];
 
 // Rate Limiter
 app.use(rateLimiter);
@@ -28,7 +35,8 @@ app.get('/api/users', cache);
 app.use(
   '/api',
   createProxyMiddleware({
-    target: BACKEND_URL,
+    // target: BACKEND_URL,
+    target: BACKENDS[0],
     changeOrigin: true,
 
     pathRewrite: (path) => {
@@ -78,5 +86,6 @@ app.use(
 
 app.listen(PORT, () => {
   console.log(`Gateway running on http://localhost:${PORT}`);
-  console.log(`Backend: ${BACKEND_URL}`);
+  // console.log(`Backend: ${BACKEND_URL}`);
+  console.log('Backends:', BACKENDS);
 });

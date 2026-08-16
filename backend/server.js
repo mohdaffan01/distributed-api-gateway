@@ -3,6 +3,7 @@ import userController from './controller/user.controller.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const SERVER_ID = process.env.SERVER_ID || "backend-default";
 
 
 app.get('/', (req, res) => {
@@ -14,6 +15,13 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
     service: 'api-server'
+  });
+});
+// Server info endpoint
+app.get("/api/server-info", (req, res) => {
+  res.json({
+    server: SERVER_ID,
+    port: PORT
   });
 });
 
