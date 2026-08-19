@@ -28,10 +28,7 @@ app.get("/health", (req, res) => {
 
 // Server info endpoint
 app.get("/api/server-info", async (req, res) => {
-  console.log("Backend 3001: request received");
-  await new Promise(resolve => setTimeout(resolve, 10000));
-
-  console.log("Backend 3001: sending response");
+  console.log("1");
 
   res.json({
     server: SERVER_ID,

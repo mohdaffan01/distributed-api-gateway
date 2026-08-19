@@ -5,6 +5,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import { rateLimiter } from './middleware/rateLimiter.js';
 import { cache } from './middleware/cache.js';
 import redisClient from './config/redis.js';
+import CricuitBreaker from './middleware/circuitBreaker.js';
 
 const app = express();
 
@@ -16,6 +17,14 @@ const BACKENDS = [
 ];
 
 const healthyBackends = new Set();
+
+
+// create a instance of cicuit Breaker
+const circuitBreaker = new CricuitBreaker();
+setTimeout(() => {
+  circuitBreaker.tryRecovery();
+  console.log("Circuit state:", circuitBreaker.state);
+}, 10000);
 
 const checkBackendHealth = async (backend) => {
   try {
@@ -90,6 +99,10 @@ app.use(
       proxyRes: (proxyRes, req) => {
         console.log(`Backend response: ${proxyRes.statusCode}`);
 
+        if (proxyRes.statusCode >= 200 && proxyRes.statusCode < 300) {
+          circuitBreaker.recordSuccess();
+        }
+
         if (req.cacheKey && proxyRes.statusCode === 200) {
           let body = "";
 
@@ -114,23 +127,45 @@ app.use(
       },
 
       error: (err, req, res) => {
+
+        circuitBreaker.recordFailure();
+        console.error("Proxy error:", err.message);
+
         if (err.code === "ECONNRESET") {
           console.log("Backend request timed out");
 
-          res.status(504).json({
+          return res.status(504).json({
             error: "Gateway Timeout",
             message: "Backend took too long to respond"
           });
-
-          return;
         }
 
-        console.error("Proxy error:", err.message);
+        if (!res.headersSent) {
+          res.status(502).json({
+            error: "Bad Gateway",
+            message: "Backend service failed"
+          });
+        }
       }
+
     }
   })
 );
 
+
+
+app.get('/test-recovery', (req, res) => {
+  circuitBreaker.tryRecovery();
+
+  console.log("Circuit state:", circuitBreaker.state);
+
+  res.json({
+    state: circuitBreaker.state
+  });
+});
+
+
+//--------------------------------------listen --------------------------
 app.listen(PORT, () => {
   console.log(`Gateway running on http://localhost:${PORT}`);
   // console.log(`Backend: ${BACKEND_URL}`);
