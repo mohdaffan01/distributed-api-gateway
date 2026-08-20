@@ -11,7 +11,8 @@ app.get('/', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  await new Promise(resolve => setTimeout(resolve, 5000));
   res.status(200).json({
     message: 'if you want to check health of server the use /health ',
     status: 'healthy',
@@ -28,7 +29,10 @@ app.get("/health", (req, res) => {
 
 // Server info endpoint
 app.get("/api/server-info", async (req, res) => {
-  console.log("1");
+
+  console.log("Slow request started");
+  await new Promise(resolve => setTimeout(resolve, 8000));
+  console.log("Slow request finished");
 
   res.json({
     server: SERVER_ID,

@@ -6,8 +6,10 @@ import { rateLimiter } from './middleware/rateLimiter.js';
 import { cache } from './middleware/cache.js';
 import redisClient from './config/redis.js';
 import CricuitBreaker from './middleware/circuitBreaker.js';
+import backpressure from './middleware/backpressure.js';
 
 const app = express();
+
 
 const PORT = process.env.PORT || 4000;
 const BACKENDS = [
@@ -62,6 +64,9 @@ const getNextBackend = () => { // round robin function
 // Rate Limiter
 app.use(rateLimiter);
 
+//backpressure
+app.use(backpressure);
+
 // Gateway health
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -82,7 +87,7 @@ app.use(
       return getNextBackend();
     },
     changeOrigin: true,
-    proxyTimeout: 5000, // if backend not respond to 5 sec sec then send a error message
+    proxyTimeout: 10000, 
 
     pathRewrite: (path) => {
       return `/api${path}`;
@@ -127,10 +132,8 @@ app.use(
       },
 
       error: (err, req, res) => {
-
         circuitBreaker.recordFailure();
         console.error("Proxy error:", err.message);
-
         if (err.code === "ECONNRESET") {
           console.log("Backend request timed out");
 
@@ -139,7 +142,6 @@ app.use(
             message: "Backend took too long to respond"
           });
         }
-
         if (!res.headersSent) {
           res.status(502).json({
             error: "Bad Gateway",
@@ -168,6 +170,5 @@ app.get('/test-recovery', (req, res) => {
 //--------------------------------------listen --------------------------
 app.listen(PORT, () => {
   console.log(`Gateway running on http://localhost:${PORT}`);
-  // console.log(`Backend: ${BACKEND_URL}`);
   console.log('Backends:', BACKENDS);
 });
