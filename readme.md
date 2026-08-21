@@ -1,3 +1,15 @@
+# Distributed API Gateway - Architecture Flowchart
+
+This diagram shows the complete request lifecycle of the Distributed API Gateway,
+from the Client request through the Load Balancer, Gateway instances (Rate Limiting,
+Backpressure, Health Checks, Load Balancing, Circuit Breaker, Timeout), Redis shared
+state, and the Backend servers, back to the Client. It also includes the Backend
+Failure Handling and Circuit Breaker Recovery sub-flows.
+
+> Renders automatically on GitHub (no extra setup needed) since it's inside a
+> ```mermaid fenced code block in this `.md` file.
+
+```mermaid
 flowchart TD
     Client([Client])
     LB[Load Balancer]
@@ -108,3 +120,4 @@ flowchart TD
         TestReq -->|Yes| CBClosedR
         TestReq -->|No| CBOpenR
     end
+```
