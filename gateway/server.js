@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 
 import { rateLimiter } from './middleware/rateLimiter.js';
 import { cache } from './middleware/cache.js';
@@ -18,40 +18,54 @@ const BACKENDS = [
   'http://localhost:3003'  // index [2]
 ];
 
-const healthyBackends = new Set();
-
-
 // create a instance of cicuit Breaker
 const circuitBreaker = new CricuitBreaker();
-setTimeout(() => {
-  circuitBreaker.tryRecovery();
-  console.log("Circuit state:", circuitBreaker.state);
+setInterval(() => {
+  BACKENDS.forEach(async (backend) => {
+    const state = await circuitBreaker.getState(backend);
+
+    if (state === "OPEN") {
+      await circuitBreaker.tryRecovery(backend);
+    }
+  });
 }, 10000);
 
 const checkBackendHealth = async (backend) => {
   try {
     const response = await fetch(`${backend}/health`);
-
+    const key = `backend-health:${backend}`;
     if (response.ok) {
-      healthyBackends.add(backend);
+      await redisClient.set(key, "healthy");
       console.log(`Healthy: ${backend}`);
     } else {
-      healthyBackends.delete(backend);
+      await redisClient.set(key, "unhealthy");
       console.log(`Unhealthy: ${backend}`);
     }
   } catch (error) {
-    healthyBackends.delete(backend);
+    const key = `backend-health:${backend}`;
+
+    await redisClient.set(key, "unhealthy");
+
     console.log(`Unhealthy: ${backend}`);
   }
 };
-BACKENDS.forEach(checkBackendHealth);
+
+setInterval(() => {
+  BACKENDS.forEach(checkBackendHealth);
+}, 5000);
 
 let currentBackend = 0; // Index of the current backend to use
 
-const getNextBackend = () => { // round robin function
-  const availableBackends = BACKENDS.filter((backend) =>
-    healthyBackends.has(backend)
-  );
+const getNextBackend = async () => {
+  const availableBackends = [];
+  for (const backend of BACKENDS) {
+    const key = `backend-health:${backend}`;
+    const status = await redisClient.get(key);
+    const circuitOpen = await circuitBreaker.isOpen(backend);
+    if (status === "healthy" && !circuitOpen) {
+      availableBackends.push(backend);
+    }
+  }
   if (availableBackends.length === 0) {
     throw new Error("No healthy backends available");
   }
@@ -83,11 +97,13 @@ app.use(
   createProxyMiddleware({
     // target: BACKEND_URL,
     target: BACKENDS[0], //this not mean that all request use the first backend
-    router: () => { // router use round robin for selecting  the backend
-      return getNextBackend();
+    router: async (req) => {
+      const backend = await getNextBackend();
+      req.selectedBackend = backend;
+      return backend;
     },
     changeOrigin: true,
-    proxyTimeout: 10000, 
+    proxyTimeout: 10000,
 
     pathRewrite: (path) => {
       return `/api${path}`;
@@ -101,21 +117,23 @@ app.use(
         console.log(`Proxying: ${req.method} ${req.originalUrl}`);
       },
 
-      proxyRes: (proxyRes, req) => {
+      proxyRes: (proxyRes, req, res) => {
         console.log(`Backend response: ${proxyRes.statusCode}`);
 
-        if (proxyRes.statusCode >= 200 && proxyRes.statusCode < 300) {
-          circuitBreaker.recordSuccess();
-        }
+        let body = "";
 
-        if (req.cacheKey && proxyRes.statusCode === 200) {
-          let body = "";
+        proxyRes.on("data", (chunk) => {
+          console.log("Receiving data...");
+          body += chunk.toString();
+        });
 
-          proxyRes.on("data", (chunk) => {
-            body += chunk.toString();
-          });
+        proxyRes.on("end", async () => {
+          console.log("Backend response ended");
 
-          proxyRes.on("end", async () => {
+          if (
+            req.cacheKey &&
+            proxyRes.statusCode === 200
+          ) {
             try {
               await redisClient.setEx(
                 req.cacheKey,
@@ -127,12 +145,21 @@ app.use(
             } catch (error) {
               console.error("Cache save error:", error);
             }
-          });
-        }
+          }
+
+          if (
+            proxyRes.statusCode >= 200 &&
+            proxyRes.statusCode < 300
+          ) {
+            await circuitBreaker.recordSuccess(
+              req.selectedBackend
+            );
+          }
+        });
       },
 
-      error: (err, req, res) => {
-        circuitBreaker.recordFailure();
+      error: async (err, req, res) => {
+        await circuitBreaker.recordFailure(req.selectedBackend);
         console.error("Proxy error:", err.message);
         if (err.code === "ECONNRESET") {
           console.log("Backend request timed out");
