@@ -48,7 +48,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Load Balancer running on http://localhost:${PORT}`);
   console.log("Gateways:", GATEWAYS);
 });
