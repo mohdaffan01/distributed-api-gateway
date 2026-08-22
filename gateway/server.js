@@ -13,9 +13,9 @@ const app = express();
 
 const PORT = process.env.PORT || 4000;
 const BACKENDS = [
-  'http://localhost:3001', // index [0]
-  'http://localhost:3002', // index [1]
-  'http://localhost:3003'  // index [2]
+  process.env.BACKEND_1,
+  process.env.BACKEND_2,
+  process.env.BACKEND_3
 ];
 
 // create a instance of cicuit Breaker
