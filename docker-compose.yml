@@ -1,0 +1,76 @@
+services:
+
+  # ---------------- Redis ----------------
+  redis:
+    image: redis:latest
+    container_name: api-redis
+    ports:
+      - "6379:6379"
+
+
+  # ---------------- Backend Servers ----------------
+  backend-1:
+    image: api-backend:latest
+    container_name: api-backend-1
+    environment:
+      PORT: 3000
+      SERVER_ID: backend-1
+
+  backend-2:
+    image: api-backend:latest
+    container_name: api-backend-2
+    environment:
+      PORT: 3000
+      SERVER_ID: backend-2
+
+  backend-3:
+    image: api-backend:latest
+    container_name: api-backend-3
+    environment:
+      PORT: 3000
+      SERVER_ID: backend-3
+
+
+  # ---------------- Gateway Instances ----------------
+  gateway-1:
+    image: api-gateway:latest
+    container_name: api-gateway-1
+    environment:
+      PORT: 4000
+      BACKEND_1: http://backend-1:3000
+      BACKEND_2: http://backend-2:3000
+      BACKEND_3: http://backend-3:3000
+      REDIS_URL: redis://redis:6379
+
+  gateway-2:
+    image: api-gateway:latest
+    container_name: api-gateway-2
+    environment:
+      PORT: 4000
+      BACKEND_1: http://backend-1:3000
+      BACKEND_2: http://backend-2:3000
+      BACKEND_3: http://backend-3:3000
+      REDIS_URL: redis://redis:6379
+
+  gateway-3:
+    image: api-gateway:latest
+    container_name: api-gateway-3
+    environment:
+      PORT: 4000
+      BACKEND_1: http://backend-1:3000
+      BACKEND_2: http://backend-2:3000
+      BACKEND_3: http://backend-3:3000
+      REDIS_URL: redis://redis:6379
+
+
+  # ---------------- Load Balancer ----------------
+  load-balancer:
+    image: api-load-balancer:latest
+    container_name: api-load-balancer
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      GATEWAY_1: http://gateway-1:4000
+      GATEWAY_2: http://gateway-2:4000
+      GATEWAY_3: http://gateway-3:4000
