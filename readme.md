@@ -96,20 +96,3 @@ Expected:
 docker compose down
 ```
 
-## Architecture
-
-```
-Client
-   ↓
-Load Balancer :5000
-   ↓
-┌──────────┬──────────┬──────────┐
-│ Gateway 1│ Gateway 2│ Gateway 3│
-└────┬─────┴────┬─────┴────┬─────┘
-     ↓           ↓           ↓
- ┌───────────────────────────────┐
- │ Backend 1 │ Backend 2 │ ... 4 │
- └───────────────────────────────┘
-                 │
-               Redis
-```
