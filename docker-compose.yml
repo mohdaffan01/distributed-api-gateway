@@ -6,6 +6,8 @@ services:
     container_name: api-redis
     ports:
       - "6379:6379"
+    networks:
+      - api-network
 
 
   # ---------------- Backend Servers ----------------
@@ -15,6 +17,8 @@ services:
     environment:
       PORT: 3000
       SERVER_ID: backend-1
+    networks:
+      - api-network
 
   backend-2:
     image: api-backend:latest
@@ -22,6 +26,8 @@ services:
     environment:
       PORT: 3000
       SERVER_ID: backend-2
+    networks:
+      - api-network
 
   backend-3:
     image: api-backend:latest
@@ -29,7 +35,16 @@ services:
     environment:
       PORT: 3000
       SERVER_ID: backend-3
-
+    networks:
+      - api-network
+  backend-4:
+    image: api-backend:latest
+    container_name: api-backend-4
+    environment:
+      PORT: 3000
+      SERVER_ID: backend-4
+    networks:
+      - api-network
 
   # ---------------- Gateway Instances ----------------
   gateway-1:
@@ -40,7 +55,10 @@ services:
       BACKEND_1: http://backend-1:3000
       BACKEND_2: http://backend-2:3000
       BACKEND_3: http://backend-3:3000
+      BACKEND_4: http://backend-4:3000
       REDIS_URL: redis://redis:6379
+    networks:
+      - api-network
 
   gateway-2:
     image: api-gateway:latest
@@ -50,7 +68,10 @@ services:
       BACKEND_1: http://backend-1:3000
       BACKEND_2: http://backend-2:3000
       BACKEND_3: http://backend-3:3000
+      BACKEND_4: http://backend-4:3000
       REDIS_URL: redis://redis:6379
+    networks:
+      - api-network
 
   gateway-3:
     image: api-gateway:latest
@@ -60,7 +81,12 @@ services:
       BACKEND_1: http://backend-1:3000
       BACKEND_2: http://backend-2:3000
       BACKEND_3: http://backend-3:3000
+      BACKEND_4: http://backend-4:3000
       REDIS_URL: redis://redis:6379
+    networks:
+      - api-network
+
+
 
 
   # ---------------- Load Balancer ----------------
@@ -74,3 +100,11 @@ services:
       GATEWAY_1: http://gateway-1:4000
       GATEWAY_2: http://gateway-2:4000
       GATEWAY_3: http://gateway-3:4000
+    networks:
+      - api-network
+
+
+# ---------------- Networks ----------------
+networks:
+  api-network:
+    driver: bridge

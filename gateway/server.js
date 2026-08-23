@@ -15,7 +15,8 @@ const PORT = process.env.PORT || 4000;
 const BACKENDS = [
   process.env.BACKEND_1,
   process.env.BACKEND_2,
-  process.env.BACKEND_3
+  process.env.BACKEND_3,
+  process.env.BACKEND_4
 ];
 
 // create a instance of cicuit Breaker
