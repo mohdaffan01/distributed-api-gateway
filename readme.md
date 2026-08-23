@@ -19,7 +19,7 @@ docker compose version
 ### 1. Clone the Repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone https://github.com/mohdaffan01/distributed-api-gateway.git
 cd distributed-api-gateway
 ```
 
