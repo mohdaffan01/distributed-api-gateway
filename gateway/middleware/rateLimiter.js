@@ -1,6 +1,6 @@
 import redisClient from "../config/redis.js";
 
-const RATE_LIMIT = 100;
+const RATE_LIMIT = 5000;
 const WINDOW_SECONDS = 60;
 
 export const rateLimiter = async (req, res, next) => {
