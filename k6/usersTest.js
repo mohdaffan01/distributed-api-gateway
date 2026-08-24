@@ -7,17 +7,19 @@ const status429 = new Counter('status_429');
 const otherStatus = new Counter('other_status');
 
 export const options = {
-  vus: 20,
-  iterations: 100,
+  vus: 100,
+  iterations: 5000,
 };
 
 export default function () {
-  const response = http.get('http://localhost:5000/api/slow');
+  const response = http.get('http://localhost:5000/api/users');
 
   if (response.status === 200) {
     status200.add(1);
+
   } else if (response.status === 429) {
     status429.add(1);
+
   } else {
     otherStatus.add(1);
 
@@ -30,6 +32,7 @@ export default function () {
       r.status === 200 || r.status === 429,
 
     'rate limit response is correct': (r) =>
-      r.status !== 429 || r.body.includes('Too many requests'),
+      r.status !== 429 ||
+      r.body.includes('Too many requests'),
   });
 }
