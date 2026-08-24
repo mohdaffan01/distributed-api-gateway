@@ -17,6 +17,7 @@ The gateway sits between clients and backend servers, routing requests intellige
 - [Testing the API](#testing-the-api)
 - [Project Structure](#project-structure)
 - [Learning Goals](#learning-goals)
+- ![System Architecture](sys-architecture/sys-architecture.png)
 
 ---
 
@@ -30,17 +31,17 @@ It's built as a multi-instance, distributed system (not a single gateway process
 
 ## Features
 
-| Feature | Purpose |
-|---|---|
-| **Load Balancing** | Distributes incoming traffic across gateway/backend instances |
-| **Health-Aware Routing** | Skips unhealthy instances based on live health checks |
-| **Rate Limiting** | Protects backend services from being overwhelmed |
-| **Redis Caching / Shared State** | Keeps state consistent across distributed gateway instances |
-| **Circuit Breaker** | Stops sending traffic to a failing service until it recovers |
-| **Backpressure Handling** | Prevents system overload during traffic spikes |
-| **Request Timeouts** | Avoids hanging requests and cascading failures |
-| **Multiple Backend Servers** | Simulates a realistic multi-service backend |
-| **Distributed Gateway Instances** | Multiple gateway nodes working behind a load balancer |
+| Feature                           | Purpose                                                       |
+| --------------------------------- | ------------------------------------------------------------- |
+| **Load Balancing**                | Distributes incoming traffic across gateway/backend instances |
+| **Health-Aware Routing**          | Skips unhealthy instances based on live health checks         |
+| **Rate Limiting**                 | Protects backend services from being overwhelmed              |
+| **Redis Caching / Shared State**  | Keeps state consistent across distributed gateway instances   |
+| **Circuit Breaker**               | Stops sending traffic to a failing service until it recovers  |
+| **Backpressure Handling**         | Prevents system overload during traffic spikes                |
+| **Request Timeouts**              | Avoids hanging requests and cascading failures                |
+| **Multiple Backend Servers**      | Simulates a realistic multi-service backend                   |
+| **Distributed Gateway Instances** | Multiple gateway nodes working behind a load balancer         |
 
 ---
 
