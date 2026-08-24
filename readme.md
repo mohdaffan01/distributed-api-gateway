@@ -17,7 +17,7 @@ The gateway sits between clients and backend servers, routing requests intellige
 - [Testing the API](#testing-the-api)
 - [Project Structure](#project-structure)
 - [Learning Goals](#learning-goals)
-- ![System Architecture](sys-architecture/sys-architecture.png)
+- ![System Architecture](sys-architecture)
 
 ---
 
