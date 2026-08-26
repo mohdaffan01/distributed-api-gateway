@@ -18,6 +18,7 @@ The gateway sits between clients and backend servers, routing requests intellige
 - [Project Structure](#project-structure)
 - [Learning Goals](#learning-goals)
 - [System Architecture](docs/sys-architecture.png)
+- [Benchmark Results](docs/results.md)
 
 ---
 
